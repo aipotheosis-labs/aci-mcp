@@ -42,10 +42,10 @@ def start_apps_server(apps: str, linked_account_owner_id: str, transport: str, p
 
 @main.command(name="unified-server")
 @click.option(
-    "--allowed-apps-only",
+    "--allow-all-apps",
     is_flag=True,
     default=False,
-    help="Limit the functions (tools) search to only the allowed apps that are accessible to this agent. (identified by ACI_API_KEY)",
+    help="Allow the search function to discover all apps, not just the allowed apps that are accessible to this agent (identified by ACI_API_KEY)",
 )
 @click.option(
     "--linked-account-owner-id",
@@ -61,11 +61,11 @@ def start_apps_server(apps: str, linked_account_owner_id: str, transport: str, p
 )
 @click.option("--port", default=8000, help="Port to listen on for SSE")
 def start_unified_server(
-    allowed_apps_only: bool, linked_account_owner_id: str, transport: str, port: int
+    allow_all_apps: bool, linked_account_owner_id: str, transport: str, port: int
 ) -> None:
     """Start the unified MCP server with unlimited tool access."""
     from .unified_server import start
 
     validators.validate_api_key(os.getenv("ACI_API_KEY"))
 
-    return start(allowed_apps_only, linked_account_owner_id, transport, port)
+    return start(allowed_apps_only=not allow_all_apps, linked_account_owner_id=linked_account_owner_id, transport=transport, port=port)
