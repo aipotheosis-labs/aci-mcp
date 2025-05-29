@@ -1,6 +1,9 @@
-import click
 import os
+
+import click
+
 from .common import validators
+
 
 @click.group()
 def main():
@@ -19,7 +22,8 @@ def main():
     "--linked-account-owner-id",
     required=True,
     type=str,
-    help="the owner id of the linked accounts to use for the tool calls. You'll need to create the linked accounts on platform.aci.dev",
+    help="the owner id of the linked accounts to use for the tool calls. "
+    "You'll need to create the linked accounts on platform.aci.dev",
 )
 @click.option(
     "--transport",
@@ -42,16 +46,18 @@ def start_apps_server(apps: str, linked_account_owner_id: str, transport: str, p
 
 @main.command(name="unified-server")
 @click.option(
-    "--allow-all-apps",
+    "--search-all-apps",
     is_flag=True,
     default=False,
-    help="Allow the search function to discover all apps, not just the allowed apps that are accessible to this agent (identified by ACI_API_KEY)",
+    help="Allow the search function to discover all apps, not just the allowed apps "
+    "that are accessible to this agent (identified by ACI_API_KEY)",
 )
 @click.option(
     "--linked-account-owner-id",
     required=True,
     type=str,
-    help="the owner id of the linked account to use for the tool calls",
+    help="the owner id of the linked account to use for the tool calls. "
+    "You'll need to create the linked account on platform.aci.dev",
 )
 @click.option(
     "--transport",
@@ -61,11 +67,16 @@ def start_apps_server(apps: str, linked_account_owner_id: str, transport: str, p
 )
 @click.option("--port", default=8000, help="Port to listen on for SSE")
 def start_unified_server(
-    allow_all_apps: bool, linked_account_owner_id: str, transport: str, port: int
+    search_all_apps: bool, linked_account_owner_id: str, transport: str, port: int
 ) -> None:
     """Start the unified MCP server with unlimited tool access."""
     from .unified_server import start
 
     validators.validate_api_key(os.getenv("ACI_API_KEY"))
 
-    return start(allowed_apps_only=not allow_all_apps, linked_account_owner_id=linked_account_owner_id, transport=transport, port=port)
+    return start(
+        allowed_apps_only=not search_all_apps,
+        linked_account_owner_id=linked_account_owner_id,
+        transport=transport,
+        port=port,
+    )
