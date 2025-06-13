@@ -1,6 +1,9 @@
-import click
 import os
+
+import click
+
 from .common import validators
+
 
 @click.group()
 def main():
@@ -69,3 +72,16 @@ def start_unified_server(
     validators.validate_api_key(os.getenv("ACI_API_KEY"))
 
     return start(allowed_apps_only, linked_account_owner_id, transport, port)
+
+
+@main.command(name="vibeops-server")
+def start_vibeops_server() -> None:
+    """Start the vibeops MCP server with default settings."""
+    from .vibeops_server import start
+
+    validators.validate_api_key(os.getenv("VIBEOPS_API_KEY"))
+
+    return start(
+        transport="stdio",
+        port=8000,
+    )
