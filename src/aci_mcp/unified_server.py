@@ -5,7 +5,7 @@ import anyio
 import mcp.types as types
 from aci import ACI
 from aci.meta_functions import ACIExecuteFunction, ACISearchFunctions
-from aci.types.functions import FunctionDefinitionFormat
+from aci.types.enums import FunctionDefinitionFormat
 from mcp.server.lowlevel import Server
 
 from .common import runners
@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 aci = ACI()
-server = Server("aci-mcp-unified")
+server: Server = Server("aci-mcp-unified")
 
 ALLOWED_APPS_ONLY = False
 LINKED_ACCOUNT_OWNER_ID = ""
@@ -27,6 +27,7 @@ aci_execute_function = ACIExecuteFunction.to_json_schema(FunctionDefinitionForma
 # offset parameters from the search function.
 aci_search_functions["input_schema"]["properties"].pop("limit", None)
 aci_search_functions["input_schema"]["properties"].pop("offset", None)
+
 
 def _set_up(allowed_apps_only: bool, linked_account_owner_id: str):
     """
@@ -67,18 +68,18 @@ async def handle_call_tool(
     if not arguments:
         arguments = {}
 
-    # TODO: if it's ACI_SEARCH_FUNCTIONS, populate default values for limit and offset because we 
+    # TODO: if it's ACI_SEARCH_FUNCTIONS, populate default values for limit and offset because we
     # removed them from the input schema at the top of this file.
     if name == aci_search_functions["name"]:
         arguments["limit"] = 15
         arguments["offset"] = 0
 
     # TODO: temporary solution to support multi-user usecases due to the limitation of MCP protocol.
-    # What happens here is that we allow user (MCP clients) to pass in the 
-    # "aci_override_linked_account_owner_id" parameter for the ACI_EXECUTE_FUNCTION tool call 
-    # (apart from the "function_name" and "function_arguments" parameters), to override the 
+    # What happens here is that we allow user (MCP clients) to pass in the
+    # "aci_override_linked_account_owner_id" parameter for the ACI_EXECUTE_FUNCTION tool call
+    # (apart from the "function_name" and "function_arguments" parameters), to override the
     # default value of the "linked_account_owner_id".
-    # The --linked-account-owner-id flag that we use to start the MCP server will be used as the 
+    # The --linked-account-owner-id flag that we use to start the MCP server will be used as the
     # default value of the "linked_account_owner_id".
     linked_account_owner_id = LINKED_ACCOUNT_OWNER_ID
     if name == aci_execute_function["name"] and "aci_override_linked_account_owner_id" in arguments:

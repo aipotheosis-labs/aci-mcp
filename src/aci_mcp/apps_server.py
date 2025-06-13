@@ -4,7 +4,7 @@ import logging
 import anyio
 import mcp.types as types
 from aci import ACI
-from aci.types.functions import FunctionDefinitionFormat
+from aci.types.enums import FunctionDefinitionFormat
 from mcp.server.lowlevel import Server
 
 from .common import runners

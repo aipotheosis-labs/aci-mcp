@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 
 VIBEOPS_BASE_URL = os.getenv("VIBEOPS_BASE_URL", "https://vibeops.aci.dev")
 
-server = Server("aci-mcp-vibeops")
+if not os.getenv("VIBEOPS_API_KEY"):
+    raise ValueError("VIBEOPS_API_KEY is not set")
+
+server: Server = Server("aci-mcp-vibeops")
 
 
 aci_search_functions = ACISearchFunctions.to_json_schema(FunctionDefinitionFormat.ANTHROPIC)
@@ -59,24 +62,56 @@ async def handle_call_tool(
 
     try:
         if name == aci_search_functions["name"]:
-            response = httpx.get(
-                f"{VIBEOPS_BASE_URL}/api/v1/functions/search",
-                headers={"Authorization": f"Bearer {os.getenv('VIBEOPS_API_KEY')}"},
-                params={"intent": arguments["intent"]},
-            )
+            if not arguments.get("intent"):
+                return [
+                    types.TextContent(
+                        type="text",
+                        text="Intent is required",
+                    )
+                ]
+            async with httpx.AsyncClient(base_url=VIBEOPS_BASE_URL) as client:
+                response = await client.get(
+                    "/api/v1/functions/search",
+                    headers={"Authorization": f"Bearer {os.getenv('VIBEOPS_API_KEY')}"},
+                    params={"intent": arguments["intent"]},
+                    timeout=10,
+                )
+                response.raise_for_status()  # Raise exception for HTTP errors
             return [types.TextContent(type="text", text=response.text)]
         elif name == aci_execute_function["name"]:
-            response = httpx.post(
-                f"{VIBEOPS_BASE_URL}/api/v1/functions/{arguments['function_name']}/execute",
-                headers={"Authorization": f"Bearer {os.getenv('VIBEOPS_API_KEY')}"},
-                json={
-                    "function_input": arguments["function_arguments"],
-                },
-            )
+            if not arguments.get("function_name") or not arguments.get("function_arguments"):
+                return [
+                    types.TextContent(
+                        type="text",
+                        text="Function name and function arguments are required",
+                    )
+                ]
+            async with httpx.AsyncClient(base_url=VIBEOPS_BASE_URL) as client:
+                response = await client.post(
+                    f"/api/v1/functions/{arguments['function_name']}/execute",
+                    headers={"Authorization": f"Bearer {os.getenv('VIBEOPS_API_KEY')}"},
+                    json={"function_input": arguments["function_arguments"]},
+                    timeout=30,
+                )
+                response.raise_for_status()  # Raise exception for HTTP errors
             return [types.TextContent(type="text", text=response.text)]
         else:
             return [types.TextContent(type="text", text="Not implemented")]
 
+    except httpx.HTTPStatusError as e:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"HTTP error {e.response.status_code}: {e.response.text}",
+            )
+        ]
+    except httpx.TimeoutException:
+        return [
+            types.TextContent(
+                type="text",
+                text="Request timed out",
+            )
+        ]
     except Exception as e:
         return [
             types.TextContent(
