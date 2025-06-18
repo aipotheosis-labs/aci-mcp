@@ -47,6 +47,22 @@ async def handle_list_tools() -> list[types.Tool]:
             description=aci_execute_function["description"],
             inputSchema=aci_execute_function["input_schema"],
         ),
+        types.Tool(
+            name="ACI_GET_PROJECT_STATE",
+            description="""
+Get the current state of your project, including the GitLab, Vercel, and Supabase
+deployments. Always first call this tool to get the state of your project, you would
+need to know the state of your project to execute other functions using the
+aci_execute_function tool.
+
+Remember to run this tool every once in a while to get the latest state of your project
+or after you have executed any function that may alter the state of your project.
+""",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+            },
+        ),
     ]
 
 
@@ -62,7 +78,7 @@ async def handle_call_tool(
 
     try:
         if name == aci_search_functions["name"]:
-            if not arguments.get("intent"):
+            if not arguments.get("intent"):  # The intent cannot be ""
                 return [
                     types.TextContent(
                         type="text",
@@ -77,9 +93,14 @@ async def handle_call_tool(
                     timeout=10,
                 )
                 response.raise_for_status()  # Raise exception for HTTP errors
-            return [types.TextContent(type="text", text=response.text)]
+                return [types.TextContent(type="text", text=response.text)]
         elif name == aci_execute_function["name"]:
-            if not arguments.get("function_name") or not arguments.get("function_arguments"):
+            if (
+                (arguments.get("function_name") is None)
+                or (
+                    arguments.get("function_arguments") is None
+                )  # function_arguments can be {} but not None
+            ):
                 return [
                     types.TextContent(
                         type="text",
@@ -94,7 +115,31 @@ async def handle_call_tool(
                     timeout=30,
                 )
                 response.raise_for_status()  # Raise exception for HTTP errors
-            return [types.TextContent(type="text", text=response.text)]
+                return [types.TextContent(type="text", text=response.text)]
+        elif name == "ACI_GET_PROJECT_STATE":
+            async with httpx.AsyncClient(base_url=VIBEOPS_BASE_URL) as client:
+                response = await client.get(
+                    "/api/v1/projects/state",
+                    headers={"Authorization": f"Bearer {os.getenv('VIBEOPS_API_KEY')}"},
+                )
+                response.raise_for_status()  # Raise exception for HTTP errors
+                project_states = response.json()
+                prompt = f"""
+We have already created a GitLab project, Vercel project, and Supabase
+project for you. The GitLab project is already linked to the Vercel
+project. Any code pushed to the GitLab project will be automatically
+deployed to the Vercel project. Test your code locally before pushing
+to the GitLab project. You should use the access token returned below
+to push the code to your GitLab project.
+
+Here's the current state of your project:
+GitLab: {project_states["gitlab"]}
+Vercel: {project_states["vercel"]}
+Supabase: {project_states["supabase"]}
+                """
+                # TODO: instruct the LLM to check Vercel deployment status once those
+                # functions are integrated.
+                return [types.TextContent(type="text", text=prompt)]
         else:
             return [types.TextContent(type="text", text="Not implemented")]
 
