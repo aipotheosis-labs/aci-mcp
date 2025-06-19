@@ -129,7 +129,8 @@ We have already created a GitLab project, Vercel project, and Supabase
 project for you. The GitLab project is already linked to the Vercel
 project. Any code pushed to the GitLab project will be automatically
 deployed to the Vercel project. You should use the access token returned below
-to push the code to your GitLab project.
+to push the code to your GitLab project (for example, you can add the git remote using
+this command: `git remote add origin https://vibe:{project_states["gitlab"]["accessToken"]}@gitlab.com/{project_states["gitlab"]["pathWithGroup"]}.git`).
 
 Here's the current state of your project:
 GitLab: {project_states["gitlab"]}
