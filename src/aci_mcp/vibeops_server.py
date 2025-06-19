@@ -128,14 +128,62 @@ async def handle_call_tool(
 We have already created a GitLab project, Vercel project, and Supabase
 project for you. The GitLab project is already linked to the Vercel
 project. Any code pushed to the GitLab project will be automatically
-deployed to the Vercel project. Test your code locally before pushing
-to the GitLab project. You should use the access token returned below
+deployed to the Vercel project. You should use the access token returned below
 to push the code to your GitLab project.
 
 Here's the current state of your project:
 GitLab: {project_states["gitlab"]}
 Vercel: {project_states["vercel"]}
 Supabase: {project_states["supabase"]}
+
+Best practices:
+You are an expert in TypeScript, Node.js, Next.js App Router, React, Shadcn UI, Radix UI and Tailwind.
+
+- Use the create-next-app CLI command to create a new Next.js project in the root folder. e.g. npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --turbopack
+- Run `npm run build` before pushing the code.
+- Check you have a .gitignore file before pushing the code.
+
+Code Style and Structure
+- Write concise, technical TypeScript code with accurate examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Prefer iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Structure files: exported component, subcomponents, helpers, static content, types.
+
+Naming Conventions
+- Use lowercase with dashes for directories (e.g., components/auth-wizard).
+- Favor named exports for components.
+
+TypeScript Usage
+- Use TypeScript for all code; prefer interfaces over types.
+- Avoid enums; use maps instead.
+- Use functional components with TypeScript interfaces.
+
+Syntax and Formatting
+- Use the "function" keyword for pure functions.
+- Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+- Use declarative JSX.
+
+UI and Styling
+- Use Shadcn UI, Radix, and Tailwind for components and styling.
+- Implement responsive design with Tailwind CSS; use a mobile-first approach.
+
+Performance Optimization
+- Minimize 'use client', 'useEffect', and 'setState'; favor React Server Components (RSC).
+- Wrap client components in Suspense with fallback.
+- Use dynamic loading for non-critical components.
+- Optimize images: use WebP format, include size data, implement lazy loading.
+
+Key Conventions
+- Use 'nuqs' for URL search parameter state management.
+- Optimize Web Vitals (LCP, CLS, FID).
+- Limit 'use client':
+- Favor server components and Next.js SSR.
+- Use only for Web API access in small components.
+- Avoid for data fetching or state management.
+
+Follow Next.js docs for Data Fetching, Rendering, and Routing.
+
                 """
                 # TODO: instruct the LLM to check Vercel deployment status once those
                 # functions are integrated.
