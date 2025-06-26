@@ -13,9 +13,11 @@ from .common import runners
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-VIBEOPS_BASE_URL = os.getenv("VIBEOPS_BASE_URL", "https://vibeops.aci.dev")
+VIBEOPS_BASE_URL = os.getenv("VIBEOPS_BASE_URL", "https://api.vibeops.aci.dev")
 
-if not os.getenv("VIBEOPS_API_KEY"):
+VIBEOPS_API_KEY = os.getenv("VIBEOPS_API_KEY", "")
+
+if not VIBEOPS_API_KEY:
     raise ValueError("VIBEOPS_API_KEY is not set")
 
 server: Server = Server("aci-mcp-vibeops")
@@ -48,7 +50,7 @@ async def handle_list_tools() -> list[types.Tool]:
             inputSchema=aci_execute_function["input_schema"],
         ),
         types.Tool(
-            name="ACI_GET_PROJECT_STATE",
+            name="ACI_GET_PROJECT_STATE",  # TODO: remove ACI_ prefix?
             description="""
 Get the current state of your project, including the GitLab, Vercel, and Supabase
 deployments. Always first call this tool to get the state of your project, you would
@@ -87,8 +89,8 @@ async def handle_call_tool(
                 ]
             async with httpx.AsyncClient(base_url=VIBEOPS_BASE_URL) as client:
                 response = await client.get(
-                    "/api/v1/functions/search",
-                    headers={"Authorization": f"Bearer {os.getenv('VIBEOPS_API_KEY')}"},
+                    "/v1/functions/search",
+                    headers={"X-API-KEY": VIBEOPS_API_KEY},
                     params={"intent": arguments["intent"]},
                     timeout=10,
                 )
@@ -109,8 +111,8 @@ async def handle_call_tool(
                 ]
             async with httpx.AsyncClient(base_url=VIBEOPS_BASE_URL) as client:
                 response = await client.post(
-                    f"/api/v1/functions/{arguments['function_name']}/execute",
-                    headers={"Authorization": f"Bearer {os.getenv('VIBEOPS_API_KEY')}"},
+                    f"/v1/functions/{arguments['function_name']}/execute",
+                    headers={"X-API-KEY": VIBEOPS_API_KEY},
                     json={"function_input": arguments["function_arguments"]},
                     timeout=30,
                 )
@@ -119,8 +121,8 @@ async def handle_call_tool(
         elif name == "ACI_GET_PROJECT_STATE":
             async with httpx.AsyncClient(base_url=VIBEOPS_BASE_URL) as client:
                 response = await client.get(
-                    "/api/v1/projects/state",
-                    headers={"Authorization": f"Bearer {os.getenv('VIBEOPS_API_KEY')}"},
+                    "/v1/projects/self",
+                    headers={"X-API-KEY": VIBEOPS_API_KEY},
                 )
                 response.raise_for_status()  # Raise exception for HTTP errors
                 project_states = response.json()
@@ -130,7 +132,7 @@ project for you. The GitLab project is already linked to the Vercel
 project. Any code pushed to the GitLab project will be automatically
 deployed to the Vercel project. You should use the access token returned below
 to push the code to your GitLab project (for example, you can add the git remote using
-this command: `git remote add origin https://vibe:{project_states["gitlab"]["accessToken"]}@gitlab.com/{project_states["gitlab"]["pathWithGroup"]}.git`).
+this command: `git remote add origin https://vibe:{project_states["gitlab"]["resource"]["resource_config"]["project_access_token"]}@gitlab.com/vibeops.infra-group/{project_states["gitlab"]["resource"]["resource_config"]["name"]}.git`).
 
 Here's the current state of your project:
 GitLab: {project_states["gitlab"]}
