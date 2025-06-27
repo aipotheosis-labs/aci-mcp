@@ -22,6 +22,30 @@ if not VIBEOPS_API_KEY:
 
 server: Server = Server("aci-mcp-vibeops")
 
+SUPABASE_AUTH_SNIPPET = """
+const getURL = () => {
+  let url = process?.env?.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000/'
+  
+  // Make sure to include `https://` when not localhost
+  if (!url.startsWith('http')) {
+    url = `https://${url}`
+  }
+  
+  // Make sure to include a trailing `/`
+  if (!url.endsWith('/')) {
+    url = `${url}/`
+  }
+  
+  return url
+}
+
+const { data, error } = await supabase.auth.signInWithOAuth({
+  provider: 'github',
+  options: {
+    redirectTo: getURL(),
+  },
+})
+"""
 
 aci_search_functions = ACISearchFunctions.to_json_schema(FunctionDefinitionFormat.ANTHROPIC)
 aci_execute_function = ACIExecuteFunction.to_json_schema(FunctionDefinitionFormat.ANTHROPIC)
@@ -187,7 +211,10 @@ Key Conventions
 
 Follow Next.js docs for Data Fetching, Rendering, and Routing.
 
-                """
+Important Notes:
+You have to use Supabase Auth to implement your Auth part.
+you must set these part on your supabase project or find a way or set redirect url to your project.
+{SUPABASE_AUTH_SNIPPET}"""
                 # TODO: instruct the LLM to check Vercel deployment status once those
                 # functions are integrated.
                 return [types.TextContent(type="text", text=prompt)]
