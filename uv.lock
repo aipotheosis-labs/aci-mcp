@@ -4,7 +4,7 @@ requires-python = ">=3.10"
 
 [[package]]
 name = "aci-mcp"
-version = "1.0.0b4"
+version = "1.0.0b9"
 source = { editable = "." }
 dependencies = [
     { name = "aci-sdk" },
@@ -26,7 +26,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aci-sdk", specifier = ">=1.0.0b1" },
+    { name = "aci-sdk", specifier = ">=1.0.0b2" },
     { name = "anthropic", specifier = ">=0.49.0" },
     { name = "anyio", specifier = ">=4.9.0" },
     { name = "click", specifier = ">=8.1.8" },
@@ -45,7 +45,7 @@ dev = [
 
 [[package]]
 name = "aci-sdk"
-version = "1.0.0b1"
+version = "1.0.0b2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "griffe" },
@@ -54,9 +54,9 @@ dependencies = [
     { name = "tenacity" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/71/9d/0d956545331ac6760af30a7bc6492083a84b32f16faa89f28ee269a83dac/aci_sdk-1.0.0b1.tar.gz", hash = "sha256:9130bf196c680deda2004d71b091883bc468ea1649d71dbf676b9172c067d4ef", size = 63449, upload-time = "2025-04-22T02:22:02.769Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/68/57/bd2b54e6ee84db1606e9959cabdde5fc6dace3e34dd360a62663d353e868/aci_sdk-1.0.0b2.tar.gz", hash = "sha256:b5f6b97c65adbacdf835bbba9d691dd55ad4aeae941eae68d5fb05ea01da802a", size = 63622, upload-time = "2025-05-06T14:33:12.312Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/57/2f1cfb3ee6a84e355a09dd94a4c3c5d1dbe9dbb925950c6903cb8ef2a216/aci_sdk-1.0.0b1-py3-none-any.whl", hash = "sha256:f3d9f3de58c518ecf4fc44ebedf1e4a1e23a30df268782989d1ce8852bd47175", size = 31713, upload-time = "2025-04-22T02:22:01.252Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/57/943ce077b823bce9a9d8f223cde70c12d9fbe923392f62d89cabea7cd7e1/aci_sdk-1.0.0b2-py3-none-any.whl", hash = "sha256:5ff09d074e1e146b536fe19334ea7ab03e62c75657ba0628bfb8778d376a7140", size = 31876, upload-time = "2025-05-06T14:33:10.871Z" },
 ]
 
 [[package]]
