@@ -211,7 +211,7 @@ Key Conventions
 Follow Next.js docs for Data Fetching, Rendering, and Routing.
 
 Important Notes:
-You have to use Supabase Auth to implement your Auth part.
+If you're using Supabase Auth for login and signup, set a redirect URL to send users after they confirm their email. See the code snippet below for how to do this with the Supabase SDK.
 you must set these part on your supabase project or find a way or set redirect url to your project.
 {SUPABASE_AUTH_SNIPPET}"""
                 # TODO: instruct the LLM to check Vercel deployment status once those
