@@ -32,6 +32,36 @@ aci_execute_function = ACIExecuteFunction.to_json_schema(FunctionDefinitionForma
 aci_search_functions["input_schema"]["properties"].pop("limit", None)
 aci_search_functions["input_schema"]["properties"].pop("offset", None)
 
+ALL_TOOLS: list[types.Tool] = []
+ALL_TOOL_NAMES: set[str] = set()
+
+
+def _set_up():
+    """
+    Set up global variables
+    """
+    global ALL_TOOLS
+
+    with httpx.Client(base_url=VIBEOPS_BASE_URL) as client:
+        response = client.get(
+            "/v1/functions/search",
+            headers={"X-API-KEY": VIBEOPS_API_KEY},
+            params={"format": FunctionDefinitionFormat.ANTHROPIC.value},
+            timeout=10,
+        )
+        response.raise_for_status()  # Raise exception for HTTP errors
+        functions = response.json()
+        for function in functions:
+            print(function)
+            ALL_TOOLS.append(
+                types.Tool(
+                    name=function["name"],
+                    description=function["description"],
+                    inputSchema=function["input_schema"],
+                )
+            )
+            ALL_TOOL_NAMES.add(function["name"])
+
 
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
@@ -40,17 +70,7 @@ async def handle_list_tools() -> list[types.Tool]:
     """
     return [
         types.Tool(
-            name=aci_search_functions["name"],
-            description=aci_search_functions["description"],
-            inputSchema=aci_search_functions["input_schema"],
-        ),
-        types.Tool(
-            name=aci_execute_function["name"],
-            description=aci_execute_function["description"],
-            inputSchema=aci_execute_function["input_schema"],
-        ),
-        types.Tool(
-            name="ACI_GET_PROJECT_STATE",  # TODO: remove ACI_ prefix?
+            name="GET_PROJECT_STATE",
             description="""
 Get the current state of your project, including the GitLab, Vercel, and Supabase
 deployments. Always first call this tool to get the state of your project, you would
@@ -65,7 +85,7 @@ or after you have executed any function that may alter the state of your project
                 "properties": {},
             },
         ),
-    ]
+    ] + ALL_TOOLS
 
 
 @server.call_tool()
@@ -79,46 +99,7 @@ async def handle_call_tool(
         arguments = {}
 
     try:
-        if name == aci_search_functions["name"]:
-            if not arguments.get("intent"):  # The intent cannot be ""
-                return [
-                    types.TextContent(
-                        type="text",
-                        text="Intent is required",
-                    )
-                ]
-            async with httpx.AsyncClient(base_url=VIBEOPS_BASE_URL) as client:
-                response = await client.get(
-                    "/v1/functions/search",
-                    headers={"X-API-KEY": VIBEOPS_API_KEY},
-                    params={"intent": arguments["intent"]},
-                    timeout=10,
-                )
-                response.raise_for_status()  # Raise exception for HTTP errors
-                return [types.TextContent(type="text", text=response.text)]
-        elif name == aci_execute_function["name"]:
-            if (
-                (arguments.get("function_name") is None)
-                or (
-                    arguments.get("function_arguments") is None
-                )  # function_arguments can be {} but not None
-            ):
-                return [
-                    types.TextContent(
-                        type="text",
-                        text="Function name and function arguments are required",
-                    )
-                ]
-            async with httpx.AsyncClient(base_url=VIBEOPS_BASE_URL) as client:
-                response = await client.post(
-                    f"/v1/functions/{arguments['function_name']}/execute",
-                    headers={"X-API-KEY": VIBEOPS_API_KEY},
-                    json={"function_input": arguments["function_arguments"]},
-                    timeout=30,
-                )
-                response.raise_for_status()  # Raise exception for HTTP errors
-                return [types.TextContent(type="text", text=response.text)]
-        elif name == "ACI_GET_PROJECT_STATE":
+        if name == "GET_PROJECT_STATE":
             async with httpx.AsyncClient(base_url=VIBEOPS_BASE_URL) as client:
                 response = await client.get(
                     "/v1/projects/self",
@@ -191,6 +172,15 @@ Follow Next.js docs for Data Fetching, Rendering, and Routing.
                 # TODO: instruct the LLM to check Vercel deployment status once those
                 # functions are integrated.
                 return [types.TextContent(type="text", text=prompt)]
+        elif name in ALL_TOOL_NAMES:
+            async with httpx.AsyncClient(base_url=VIBEOPS_BASE_URL) as client:
+                response = await client.post(
+                    f"/v1/functions/{name}/execute",
+                    headers={"X-API-KEY": VIBEOPS_API_KEY},
+                    json={"function_input": arguments},
+                )
+                response.raise_for_status()  # Raise exception for HTTP errors
+                return [types.TextContent(type="text", text=response.text)]
         else:
             return [types.TextContent(type="text", text="Not implemented")]
 
@@ -219,6 +209,8 @@ Follow Next.js docs for Data Fetching, Rendering, and Routing.
 
 def start(transport: str, port: int) -> None:
     logger.info("Starting MCP server...")
+
+    _set_up()
 
     if transport == "sse":
         anyio.run(runners.run_sse_async, server, "0.0.0.0", port)
