@@ -13,7 +13,7 @@ from .common import runners
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-VIBEOPS_BASE_URL = os.getenv("VIBEOPS_BASE_URL", "https://api.vibeops.aci.dev")
+VIBEOPS_BASE_URL = os.getenv("VIBEOPS_BASE_URL", "https://controller.aci.dev")
 
 VIBEOPS_API_KEY = os.getenv("VIBEOPS_API_KEY", "")
 
