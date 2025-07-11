@@ -90,3 +90,21 @@ npx @modelcontextprotocol/inspector uvx aci-mcp vibeops-server
 ```
 
 Running `tail -n 20 -f ~/Library/Logs/Claude/mcp*.log` will show the logs from the server and may help you debug any issues.
+
+
+## Claude Desktop Extension Packing
+
+```bash
+# Install the extension tool
+npm install -g @anthropic-ai/dxt
+
+# Use uv and venv to install the dependencies
+uv venv
+source .venv/bin/activate
+uv pip install -e .
+
+# set PYTHONPATH to the venv on manifest.json PYTHONPATH: ".venv/lib/python3.10/site-packages"
+# Pack the MCP
+dxt pack . aci-unified-mcp-extension-v0.0.2.dxt
+```
+This version does not include `sign` step, please refer to [dxt CLI](https://github.com/anthropics/dxt/blob/main/CLI.md) for more information.

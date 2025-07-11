@@ -1,0 +1,79 @@
+{
+  "dxt_version": "0.1",
+  "name": "aci-unified-mcp-extension",
+  "display_name": "ACI Unified MCP Extension",
+  "version": "0.0.2",
+  "description": "Unified MCP server built with ACI.dev",
+  "long_description": "ACI.dev is the open source tool-calling platform that hooks up 600+ tools into any agentic IDE or custom AI agent through direct function calling or a unified MCP server. The birthplace of VibeOps.",
+  "author": {
+    "name": "aipolabs",
+    "email": "support@aipolabs.xyz",
+    "url": "https://aci.dev"
+  },
+  "homepage": "https://aci.dev",
+  "documentation": "https://www.aci.dev/docs/mcp-servers/unified-server",
+  "screenshots": [
+    "assets/unified-mcp-server-diagram.svg"
+  ],
+  "icon": "icon.png",
+  "server": {
+    "type": "python",
+    "entry_point": "src/aci_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": [
+        "${__dirname}/src/aci_mcp/__main__.py",
+        "unified-server",
+        "--linked-account-owner-id=${user_config.linked-account-owner-id}",
+        "--allowed-apps-only"
+      ],
+      "env": {
+        "PYTHONPATH": ".venv/lib/python3.10/site-packages",
+        "ACI_API_KEY": "${user_config.aci-key}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "ACI_SEARCH_FUNCTIONS",
+      "description": "This function allows you to find relevant executable functions and their schemas that can help complete your tasks."
+    },
+    {
+      "name": "ACI_EXECUTE_FUNCTION",
+      "description": "This function allows you to execute a function that is available in the ACI.dev platform."
+    }
+  ],
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">=3.10"
+    }
+  },
+  "user_config": {
+    "aci-key": {
+      "type": "string",
+      "title": "ACI API Key",
+      "description": "Please input your ACI API Key",
+      "required": true,
+      "sensitive": true
+    },
+    "linked-account-owner-id": {
+      "type": "string",
+      "title": "LINKED_ACCOUNT_OWNER_ID",
+      "description": "Please input your linked account id",
+      "required": true,
+      "sensitive": false
+    }
+  },
+  "keywords": [
+    "aci.dev",
+    "unified mcp",
+    "integration"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aipotheosis-labs/aci-mcp"
+  }
+}
