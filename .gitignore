@@ -10,5 +10,9 @@ wheels/
 .venv
 .env
 
+# IDE
 .vscode/
+
+# Extension packaging
 *.dxt
+server/lib/

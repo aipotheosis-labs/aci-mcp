@@ -20,7 +20,7 @@
     "type": "python",
     "entry_point": "src/aci_mcp/__main__.py",
     "mcp_config": {
-      "command": "python",
+      "command": "${user_config.command}",
       "args": [
         "${__dirname}/src/aci_mcp/__main__.py",
         "unified-server",
@@ -28,7 +28,7 @@
         "--allowed-apps-only"
       ],
       "env": {
-        "PYTHONPATH": ".venv/lib/python3.10/site-packages",
+        "PYTHONPATH": "${__dirname}/server/lib",
         "ACI_API_KEY": "${user_config.aci-key}"
       }
     }
@@ -64,6 +64,13 @@
       "description": "Please input your linked account id",
       "required": true,
       "sensitive": false
+    },
+"command": {
+    "type": "string",
+    "title": "Python Command",
+    "description": "Python executable command (e.g., 'python', 'python3', or full path). Use 'which python' or 'which python3' to find yours.",
+    "required": true,
+    "sensitive": false
     }
   },
   "keywords": [
