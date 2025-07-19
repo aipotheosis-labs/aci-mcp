@@ -79,3 +79,36 @@ npx @modelcontextprotocol/inspector uvx aci-mcp apps-server --apps "BRAVE_SEARCH
 ```
 
 Running `tail -n 20 -f ~/Library/Logs/Claude/mcp*.log` will show the logs from the server and may help you debug any issues.
+
+
+## Claude Desktop Extension Packaging
+
+### Prerequisites
+
+```bash
+# Install the extension tool
+npm install -g @anthropic-ai/dxt
+```
+
+### Packaging Steps
+
+1. **Install dependencies to server/lib directory** (required for PYTHONPATH in manifest.json):
+   ```bash
+   # Create server/lib directory
+   mkdir -p server/lib
+   
+   # Install project dependencies to server/lib
+   python -m pip install --target server/lib .
+   ```
+
+2. **Pack the extension**:
+   ```bash
+   dxt pack . aci-unified-mcp-extension-v0.0.2.dxt
+   ```
+
+
+### Notes
+
+- The `manifest.json` sets `PYTHONPATH` to `server/lib`, which is why dependencies must be installed there
+- This packaging method does not include the `sign` step
+- For more information, refer to [dxt CLI documentation](https://github.com/anthropics/dxt/blob/main/CLI.md)
