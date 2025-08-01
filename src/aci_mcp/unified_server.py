@@ -31,7 +31,7 @@ LINKED_ACCOUNT_OWNER_ID = ""
 
 aci_search_functions = ACISearchFunctions.to_json_schema(FunctionDefinitionFormat.ANTHROPIC)
 aci_execute_function = ACIExecuteFunction.to_json_schema(FunctionDefinitionFormat.ANTHROPIC)
-ACI_QUERY_DOCS_FUNCTION_NAME = "ACI_RETRIEVE_DOCS"
+ACI_QUERY_DOCS_FUNCTION_NAME = "ACI_SEARCH_DOCS"
 
 # TODO: Cursor's auto mode doesn't work well with MCP. (generating wrong type of parameters and
 # the type validation logic is not working correctly). So temporarily we're removing the limit and
@@ -72,7 +72,8 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
         types.Tool(
             name=ACI_QUERY_DOCS_FUNCTION_NAME,
-            description="Ask any question about ACI.dev concepts, documentation, Python & TypeScript SDK documenation, and usage examples",
+            description="Search for ACI.dev concepts, documentation,"
+            " Python & TypeScript SDK documentation, and usage examples",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -98,24 +99,69 @@ async def handle_call_tool(
         arguments = {}
 
     if name == ACI_QUERY_DOCS_FUNCTION_NAME:
+        query = arguments.get("q", "")
+        if not query or not isinstance(query, str) or not query.strip():
+            return [
+                types.TextContent(
+                    type="text",
+                    text="Error: Query parameter 'q' must be a non-empty string.",
+                )
+            ]
+
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.get(
                     f"{ACI_SERVER_URL}/docs",
-                    params={"q": arguments.get("q", "")},
+                    params={"q": query.strip()},
                     headers={"X-API-KEY": ACI_API_KEY},
                 )
+
+                if response.status_code != 200:
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"Error: API request failed with status {response.status_code}.",
+                        )
+                    ]
+
                 return [
                     types.TextContent(
                         type="text",
                         text=json.dumps(response.json()),
                     )
                 ]
+        except httpx.TimeoutException:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(
+                        "Error: Request timed out while querying documentation. "
+                        "Please try again later."
+                    ),
+                )
+            ]
+        except httpx.RequestError as e:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(f"Error: Network error occurred while querying documentation: {str(e)}"),
+                )
+            ]
+        except httpx.HTTPStatusError as e:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(
+                        f"Error: HTTP error {e.response.status_code} occurred while querying "
+                        "documentation."
+                    ),
+                )
+            ]
         except Exception as e:
             return [
                 types.TextContent(
                     type="text",
-                    text=f"Failed to query docs, error: {e}",
+                    text=(f"Error: An unexpected error occurred while querying docs: {str(e)}"),
                 )
             ]
 
