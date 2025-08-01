@@ -24,7 +24,7 @@ if not ACI_API_KEY:
         "ACI_API_KEY environment variable is not set. Please set it to your ACI API key."
     )
 
-ACI_SERVER_URL = os.getenv("ACI_SERVER_URL", "https://api.aci.dev")
+ACI_SERVER_URL = os.getenv("ACI_SERVER_URL", "https://api.aci.dev/v1")
 
 ALLOWED_APPS_ONLY = False
 LINKED_ACCOUNT_OWNER_ID = ""
