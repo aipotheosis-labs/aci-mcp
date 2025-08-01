@@ -1,7 +1,9 @@
 import json
 import logging
+import os
 
 import anyio
+import httpx
 import mcp.types as types
 from aci import ACI
 from aci.meta_functions import ACIExecuteFunction, ACISearchFunctions
@@ -13,14 +15,23 @@ from .common import runners
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-aci = ACI()
-server: Server = Server("aci-mcp-unified")
+# TODO: We need the API key and server URL because we are using an endpoint in the aci.dev main
+# server to do vector search on docs. In a future version, we might want to move the endpoint to
+# the customer support bot server.
+ACI_API_KEY = os.getenv("ACI_API_KEY", "")
+if not ACI_API_KEY:
+    raise ValueError(
+        "ACI_API_KEY environment variable is not set. Please set it to your ACI API key."
+    )
+
+ACI_SERVER_URL = os.getenv("ACI_SERVER_URL", "https://api.aci.dev")
 
 ALLOWED_APPS_ONLY = False
 LINKED_ACCOUNT_OWNER_ID = ""
 
 aci_search_functions = ACISearchFunctions.to_json_schema(FunctionDefinitionFormat.ANTHROPIC)
 aci_execute_function = ACIExecuteFunction.to_json_schema(FunctionDefinitionFormat.ANTHROPIC)
+ACI_QUERY_DOCS_FUNCTION_NAME = "ACI_SEARCH_DOCS"
 
 # TODO: Cursor's auto mode doesn't work well with MCP. (generating wrong type of parameters and
 # the type validation logic is not working correctly). So temporarily we're removing the limit and
@@ -39,6 +50,10 @@ def _set_up(allowed_apps_only: bool, linked_account_owner_id: str):
     LINKED_ACCOUNT_OWNER_ID = linked_account_owner_id
 
 
+aci = ACI()
+server: Server = Server("aci-mcp-unified")
+
+
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
     """
@@ -55,6 +70,21 @@ async def handle_list_tools() -> list[types.Tool]:
             description=aci_execute_function["description"],
             inputSchema=aci_execute_function["input_schema"],
         ),
+        types.Tool(
+            name=ACI_QUERY_DOCS_FUNCTION_NAME,
+            description="Search for ACI.dev concepts, documentation,"
+            " Python & TypeScript SDK documentation, and usage examples",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "q": {
+                        "type": "string",
+                        "description": "The query to search for in the ACI documentation.",
+                    },
+                },
+                "required": ["q"],
+            },
+        ),
     ]
 
 
@@ -67,6 +97,73 @@ async def handle_call_tool(
     """
     if not arguments:
         arguments = {}
+
+    if name == ACI_QUERY_DOCS_FUNCTION_NAME:
+        query = arguments.get("q", "")
+        if not query or not isinstance(query, str) or not query.strip():
+            return [
+                types.TextContent(
+                    type="text",
+                    text="Error: Query parameter 'q' must be a non-empty string.",
+                )
+            ]
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"{ACI_SERVER_URL}/docs",
+                    params={"q": query.strip()},
+                    headers={"X-API-KEY": ACI_API_KEY},
+                )
+
+                if response.status_code != 200:
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"Error: API request failed with status {response.status_code}.",
+                        )
+                    ]
+
+                return [
+                    types.TextContent(
+                        type="text",
+                        text=json.dumps(response.json()),
+                    )
+                ]
+        except httpx.TimeoutException:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(
+                        "Error: Request timed out while querying documentation. "
+                        "Please try again later."
+                    ),
+                )
+            ]
+        except httpx.RequestError as e:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(f"Error: Network error occurred while querying documentation: {str(e)}"),
+                )
+            ]
+        except httpx.HTTPStatusError as e:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(
+                        f"Error: HTTP error {e.response.status_code} occurred while querying "
+                        "documentation."
+                    ),
+                )
+            ]
+        except Exception as e:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(f"Error: An unexpected error occurred while querying docs: {str(e)}"),
+                )
+            ]
 
     # TODO: if it's ACI_SEARCH_FUNCTIONS, populate default values for limit and offset because we
     # removed them from the input schema at the top of this file.
