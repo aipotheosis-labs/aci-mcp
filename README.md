@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/aipotheosis-labs-aci-mcp-badge.png)](https://mseep.ai/app/aipotheosis-labs-aci-mcp)
+
 # MCP servers powered by [ACI.dev](https://aci.dev)
 
 > [!IMPORTANT]
